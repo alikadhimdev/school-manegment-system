@@ -1,53 +1,38 @@
 // lib/auth.ts
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { connectDB } from "@/lib/mongodb";
-import { User } from "@/models/User";
+import { jwtVerify } from "jose";
+
+const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
 
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
-            // ✅ الاسم يجب أن يكون مطابقاً تماماً
-            name: "credentials",
+            id: "credentials",
+            name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "email", placeholder: "admin@example.com" },
+                email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials, req) {
+            async authorize(credentials) {
+                // ✅ التحقق من التوكن مباشرة
                 try {
-                    await connectDB();
+                    const token = credentials?.password; // نمرر التوكن كـ "password"
 
-                    const { email, password } = credentials as { email: string; password: string };
+                    if (!token) return null;
 
-                    if (!email || !password) {
-                        throw new Error("يرجى إدخال البريد وكلمة المرور");
-                    }
+                    const verified = await jwtVerify(token, secret);
 
-                    // ✅ ابحث عن المستخدم مع جلب حقل كلمة المرور المشفر
-                    const user = await User.findOne({ email }).select("+password");
-
-                    if (!user) {
-                        throw new Error("البريد الإلكتروني غير مسجل");
-                    }
-
-                    const isMatch = await bcrypt.compare(password, user.password);
-
-                    if (!isMatch) {
-                        throw new Error("كلمة المرور خاطئة");
-                    }
-
-                    // ✅ أعد كائن المستخدم بدون كلمة المرور
                     return {
-                        id: user._id.toString(),
-                        name: user.name,
-                        email: user.email,
-                        role: user.role,
-                        schoolId: user.schoolId?.toString() || null,
+                        id: (verified.payload as any).id,
+                        name: (verified.payload as any).name,
+                        email: (verified.payload as any).email,
+                        role: (verified.payload as any).role,
+                        schoolId: (verified.payload as any).schoolId,
                     };
-                } catch (error: any) {
-                    // ✅ أعد الخطأ كنص ليظهر في الواجهة
-                    throw new Error(error.message || "فشل في تسجيل الدخول");
+                } catch (error) {
+                    console.error("Token verification failed:", error);
+                    return null;
                 }
             },
         }),
@@ -70,13 +55,6 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
     },
-    pages: {
-        signIn: "/login",
-    },
-    session: {
-        strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 يوم
-    },
+    session: { strategy: "jwt" },
     secret: process.env.NEXTAUTH_SECRET,
-    debug: process.env.NODE_ENV === "development",
 };
