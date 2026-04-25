@@ -2,19 +2,28 @@ import { connectDB } from "@/lib/mongodb";
 import { School } from "@/models/School";
 import { User } from "@/models/User";
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: Request) {
+async function verifySuperAdmin(req: NextRequest) {
+    const token = await getToken({
+        req,
+        secret: process.env.NEXTAUTH_SECRET
+    })
+    return token?.role === "SUPER_ADMIN" ? token : null;
+}
+
+export async function POST(req: NextRequest) {
     try {
         await connectDB();
 
-        const adminSecret = req.headers.get("x-admin-secret");
 
-        if (adminSecret !== process.env.SUPER_ADMIN_SECRET) {
+        const token = await verifySuperAdmin(req);
+        if (!token) {
             return NextResponse.json(
-                { error: 'غير مصرح لك بإنشاء مدرسة. هذه الصلاحية للمدير العام فقط.' },
+                { error: "غير مصرح لك. هذه العملية تتطلب صلاحيات الأدمن الرئيسي" },
                 { status: 403 }
-            )
+            );
         }
 
 
@@ -76,9 +85,13 @@ export async function GET(
     try {
         await connectDB();
 
-        const adminSecret = req.headers.get('x-admin-secret');
-        if (adminSecret !== process.env.SUPER_ADMIN_SECRET) {
-            return NextResponse.json({ error: 'غير مصرح لك بالوصول لهذه البيانات' }, { status: 403 });
+
+        const token = await verifySuperAdmin(req);
+        if (!token) {
+            return NextResponse.json(
+                { error: "غير مصرح لك. هذه العملية تتطلب صلاحيات الأدمن الرئيسي" },
+                { status: 403 }
+            );
         }
 
         const schools = await School.find({})
