@@ -4,14 +4,13 @@ import { School } from "@/models/School";
 import { User } from "@/models/User";
 import bcrypt from "bcryptjs";
 
-async function verifyToken(token: string) {
+export async function verifyToken(token: string) {
     try {
         const parts = token.split(".");
         if (parts.length !== 3) return null;
 
         const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
 
-        // تحقق بسيط من انتهاء الصلاحية
         if (payload.exp && payload.exp * 1000 < Date.now()) {
             return null;
         }

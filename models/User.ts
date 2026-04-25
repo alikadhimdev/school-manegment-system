@@ -14,6 +14,8 @@ const UserSchema = new Schema({
         ref: 'School',
         default: null
     },
+    subject: { type: String },
+    phone: { type: String },
     createdAt: { type: Date, default: Date.now },
 });
 
