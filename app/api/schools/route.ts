@@ -22,7 +22,7 @@ async function verifyToken(token: string) {
     }
 }
 
-async function verifySuperAdmin(req: NextRequest) {
+export async function verifySuperAdmin(req: NextRequest) {
     const cookieHeader = req.headers.get("cookie");
     if (!cookieHeader) {
         console.log("⚠️ No cookie header");

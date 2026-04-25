@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { School } from "@/models/School";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { verifySuperAdmin } from "../route";
 
 
 export async function GET(
@@ -24,17 +25,21 @@ export async function GET(
 }
 
 export async function PATCH(
-    req: Request,
+    req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
 
         await connectDB();
 
-        const adminSecret = req.headers.get("x-admin-secret");
-        if (adminSecret !== process.env.SUPER_ADMIN_SECRET) {
-            return NextResponse.json({ error: 'غير مصرح لك' }, { status: 403 });
+        const token = verifySuperAdmin(req);
+        if (!token) {
+            return NextResponse.json(
+                { error: "غير مصرح لك بالوصول لهذه البيانات" },
+                { status: 403 }
+            );
         }
+
 
         const body = await req.json();
         const { id } = await params;
@@ -59,14 +64,18 @@ export async function PATCH(
 }
 
 export async function DELETE(
-    req: Request,
+    req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
         await connectDB();
-        const adminSecret = req.headers.get('x-admin-secret');
-        if (adminSecret !== process.env.SUPER_ADMIN_SECRET) {
-            return NextResponse.json({ error: 'غير مصرح لك' }, { status: 403 });
+
+        const token = verifySuperAdmin(req);
+        if (!token) {
+            return NextResponse.json(
+                { error: "غير مصرح لك بالوصول لهذه البيانات" },
+                { status: 403 }
+            );
         }
 
         const { id } = await params;
