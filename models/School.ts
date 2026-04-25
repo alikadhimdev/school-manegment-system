@@ -10,6 +10,7 @@ const SchoolSchema = new Schema({
         required: true,
         unique: true
     },
+    adminId: { type: Schema.Types.ObjectId, ref: 'User' },
     subscriptionStatus: {
         type: String,
         enum: ['active', 'expired', 'trial'], default: 'trial'

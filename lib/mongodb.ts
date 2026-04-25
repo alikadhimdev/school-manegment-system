@@ -1,45 +1,19 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-interface MongooseCache {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    throw new Error('يرجى تعريف متغير MONGODB_URI في ملف .env.local');
 }
 
-declare global {
-    var mongoose: MongooseCache;
-}
-
-const mongoUrl = process.env.MONGODB_URL || "";
-if (!mongoUrl) {
-    throw new Error("Please define the MONGODB_URI environment variable");
-}
-
-let cached = global.mongoose;
-if (!cached) {
-    cached = global.mongoose = {
-        conn: null,
-        promise: null
-    }
-}
-
-async function connectDB() {
-    if (cached.conn) return cached.conn;
-    if (!cached.promise) {
-        const opts = {
-            bufferCommands: false
-        };
-        cached.promise = mongoose.connect(mongoUrl, opts).then((mongoose) => {
-            return mongoose;
-        })
-    }
+export const connectDB = async () => {
     try {
-        cached.conn = await cached.promise;
-    } catch (e) {
-        cached.promise = null;
-        throw e;
+        if (mongoose.connection.readyState === 1) return;
+
+        await mongoose.connect(MONGODB_URI);
+        console.log("تم الاتصال بقاعدة البيانات بنجاح");
+    } catch (error) {
+        console.error("خطأ في الاتصال بقاعدة البيانات:", error);
+        throw new Error("فشل الاتصال بـ MongoDB");
     }
-    return cached.conn;
-}
-
-export default connectDB;
-
+};
