@@ -17,6 +17,6 @@ const StudentSchema: Schema = new Schema(
     { timestamps: true }
 );
 
-StudentSchema.index({ rollNumber: 1, schoolId: 1 }, { unique: true });
+StudentSchema.index({ rollNumber: 1, schoolId: 1, grade: 1 }, { unique: true });
 
 export const Student = mongoose.models.Student || mongoose.model<IStudent>("Student", StudentSchema);
