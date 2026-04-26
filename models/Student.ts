@@ -1,25 +1,22 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
-const StudentSchema = new Schema({
-    schoolId: {
-        type: Schema.Types.ObjectId,
-        ref: 'School',
-        required: true
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    grade: {
-        type: String,
-        required: true
-    },
-    studentIdNumber: String,
-    hallId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Hall'
-    },
-    seatNumber: Number,
-});
+export interface IStudent extends Document {
+    name: string;
+    rollNumber: string;
+    grade: string;
+    schoolId: mongoose.Types.ObjectId;
+}
 
-export const Student = models.Student || model('Student', StudentSchema);
+const StudentSchema: Schema = new Schema(
+    {
+        name: { type: String, required: true },
+        rollNumber: { type: String, required: true },
+        grade: { type: String, required: true },
+        schoolId: { type: Schema.Types.ObjectId, ref: "School", required: true },
+    },
+    { timestamps: true }
+);
+
+StudentSchema.index({ rollNumber: 1, schoolId: 1 }, { unique: true });
+
+export const Student = mongoose.models.Student || mongoose.model<IStudent>("Student", StudentSchema);
