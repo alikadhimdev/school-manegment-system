@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { getToken } from "next-auth/jwt"
 import { NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "../schools/route";
+import { Teacher } from "@/models/Teacher";
 
 
 export async function verifySchoolAdmin(req: NextRequest) {
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newTeacher = await User.create({
+        const newTeacher = await Teacher.create({
             name,
             email,
             password: hashedPassword,
